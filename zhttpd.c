@@ -81,19 +81,48 @@ void writeResponse(int channelfd, char * message){
 	free(res);
 }
 
+void writeFileToResponse(int channelfd, char * fname){
+
+	char buffer[128];
+
+	getcwd(buffer, 128);
+	strcat(buffer, fname);
+
+	FILE *data = fopen(buffer, "r");
+	printf("%s\n", buffer);
+	if(data == NULL){
+		perror("Error, 404");
+		writeResponse(channelfd, "HTTP/1.1 404 NOT FOUND\n\n");
+		getcwd(buffer, 128);
+		strcat(buffer, "/fserv/404.html");
+		printf("%s\n", buffer);
+		data = fopen(buffer, "r");
+	} else {
+		writeResponse(channelfd, "HTTP/1.1 200 OK\n\n");
+	}
+	int i = 0;
+	char c = fgetc(data);
+	while( c != EOF){
+		buffer[i] = c;
+		i++;
+		if( i == 127){
+			buffer[i] = '\0';
+			i = 0;
+			writeResponse(channelfd, buffer);
+		}
+		c = fgetc(data);
+	}
+
+	buffer[i] = '\0';
+	writeResponse(channelfd, buffer);
+}
+
 void sendResponse(zHttpRequest * req){
-	//header stuff
-	writeResponse(req->outfd, "HTTP/1.1 200 OK\n");
-	
-	//body of response
-	writeResponse(req->outfd, "\n<html><body><h1>Hello</h1>\n");
-	writeResponse(req->outfd, "<p>location requested:</br>");
-	writeResponse(req->outfd, getValueForKey(req->header, "location"));
-	writeResponse(req->outfd, "</p>");
-	writeResponse(req->outfd, "<p>body:</br>");
-	writeResponse(req->outfd, req->body);
-	writeResponse(req->outfd, "</p>");
-	writeResponse(req->outfd, "</body></html>\r\n");
+	//default behavior fetches a file in ./fserv/
+	char buffer[128];
+	strcpy(buffer, "/fserv");
+	strcat(buffer, getValueForKey(req->header, "location"));
+	writeFileToResponse(req->outfd, buffer);
 }
 
 void handleIncomingRequests(int socketfd){
