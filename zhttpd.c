@@ -35,7 +35,9 @@ zHttpRequest * parseRequest(int connectfd){
 
 	//grab contents of stream, store fd
 	newRequest->outfd = connectfd;
-	br = read(connectfd, socket_buffer, SOCKET_BUFFER_SIZE);
+
+  br = read(connectfd, socket_buffer, SOCKET_BUFFER_SIZE);
+
 	socket_buffer[br] = '\0';
 	printf("%s\n[%d bytes read]\n", (char*)socket_buffer, br);
 
@@ -84,19 +86,24 @@ void writeResponse(int channelfd, char * message){
 void writeFileToResponse(int channelfd, char * fname){
 
 	char buffer[128];
-
+  memset(buffer, 0, 128);
 	getcwd(buffer, 128);
 	strcat(buffer, fname);
 
+	printf("opening: %s\n", buffer);
 	FILE *data = fopen(buffer, "r");
-	printf("%s\n", buffer);
+
 	if(data == NULL){
 		perror("Error, 404");
 		writeResponse(channelfd, "HTTP/1.1 404 NOT FOUND\n\n");
 		getcwd(buffer, 128);
 		strcat(buffer, "/fserv/404.html");
-		printf("%s\n", buffer);
+		printf("404: %s\n", buffer);
 		data = fopen(buffer, "r");
+    if(data == NULL){
+      perror("Error, 404, you're really fucked now");
+      exit(-1);
+    }
 	} else {
 		writeResponse(channelfd, "HTTP/1.1 200 OK\n\n");
 	}
@@ -115,13 +122,20 @@ void writeFileToResponse(int channelfd, char * fname){
 
 	buffer[i] = '\0';
 	writeResponse(channelfd, buffer);
+  fclose(data);
 }
 
 void sendResponse(zHttpRequest * req){
 	//default behavior fetches a file in ./fserv/
 	char buffer[128];
+  memset(buffer, 0, 128);
 	strcpy(buffer, "/fserv");
-	strcat(buffer, getValueForKey(req->header, "location"));
+  char * loc = getValueForKey(req->header, "location");
+  strcat(buffer, loc);
+  if( strcmp(loc, "/") == 0 ){
+    strcat(buffer, "index.html");
+  }
+
 	writeFileToResponse(req->outfd, buffer);
 }
 
@@ -155,9 +169,12 @@ void handleIncomingRequests(int socketfd){
 
 
 int main(int argc, char* argv[]){
+  // 1. create socket
+  // 2. bind/listen
+  // 3. accept new connections
 
 	int socketfd = newTcpSocket();
-	bindAndListen(socketfd, 3000, 25);
+	bindAndListen(socketfd, 3000, 1000);
 	handleIncomingRequests(socketfd);
 
 	return 0;
