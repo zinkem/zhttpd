@@ -107,11 +107,6 @@ int main( int argc, char *argv[]){
 	asprintf(&v, "value");
 	addValueForKey(dict, k, v);
 
-	printf("Adding value\n");
-	asprintf(&k, "fuck");
-	asprintf(&v, "youuu");
-	addValueForKey(dict, k, v);
-
 	printf("Taking value\n");	
 	char *c = getValueForKey(dict, "key");
 	if(c != NULL)
