@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <ctype.h>
 #include "zstring.h"
 
 char * newString(char * s){

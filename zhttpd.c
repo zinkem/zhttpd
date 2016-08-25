@@ -20,7 +20,7 @@ typedef struct zHttpRequest {
 	int outfd;
 } zHttpRequest;
 
-freeReq(zHttpRequest * req){
+void freeReq(zHttpRequest * req){
 	freeDictionary(req->header);
 	free(req->body);
 	free(req);
